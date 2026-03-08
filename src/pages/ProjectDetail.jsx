@@ -203,16 +203,14 @@ const ProjectDetail = () => {
           </DraggableItem>
           <DraggableItem style={{ display: 'block', width: '100%' }}>
             <div className="pd-iframe-container">
-              <iframe
-                src={project.live}
-                title={`${project.title} Live Preview`}
-                frameBorder="0"
-                loading="lazy"
-                allow="fullscreen"
-              ></iframe>
+              <img
+                src={project.image}
+                alt={`${project.title} Preview`}
+                className="pd-preview-img"
+              />
               <div className="pd-iframe-overlay">
                 <a href={project.live} target="_blank" rel="noreferrer" className="pd-iframe-btn">
-                  OPEN IN NEW TAB ↗
+                  VISIT LIVE WEBSITE ↗
                 </a>
               </div>
             </div>
@@ -443,29 +441,38 @@ const ProjectDetail = () => {
           border: 1px solid rgba(255,255,255,0.1);
           box-shadow: 0 60px 120px rgba(0,0,0,0.95);
         }
-        .pd-iframe-container iframe {
+        .pd-iframe-container img {
           width: 100%;
           height: 100%;
-          border: none;
+          object-fit: cover;
+          display: block;
         }
         .pd-iframe-overlay {
           position: absolute;
-          bottom: 30px; right: 30px;
+          top: 0; left: 0; width: 100%; height: 100%;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(0,0,0,0.4);
           z-index: 5;
         }
         .pd-iframe-btn {
           background: #E31B23;
           color: white;
-          padding: 12px 24px;
+          padding: 20px 40px;
           border-radius: 100px;
           text-decoration: none;
-          font-weight: 800;
-          font-size: 0.8rem;
-          letter-spacing: 1px;
-          box-shadow: 0 10px 30px rgba(227,27,35,0.4);
-          transition: transform 0.3s;
+          font-weight: 900;
+          font-size: 1rem;
+          letter-spacing: 2px;
+          box-shadow: 0 20px 40px rgba(227,27,35,0.6);
+          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          display: flex; align-items: center; gap: 10px;
+          border: 2px solid rgba(255,255,255,0.1);
         }
-        .pd-iframe-btn:hover { transform: translateY(-5px); }
+        .pd-iframe-btn:hover { 
+          transform: translateY(-8px) scale(1.05);
+          box-shadow: 0 30px 60px rgba(227,27,35,0.8);
+          border-color: white;
+        }
 
         /* Gallery */
         .pd-gallery {
