@@ -45,7 +45,7 @@ const Hero = () => {
                 >
                     <DraggableItem style={{ display: 'flex', alignItems: 'flex-end', height: '100%', pointerEvents: 'all' }}>
                         <motion.img
-                            src="/src/assets/hero-image.png"
+                            src="/hero-image.png"
                             alt="Developer Portrait"
                             className="hero-img"
                             initial={{ opacity: 0, y: 60 }}
