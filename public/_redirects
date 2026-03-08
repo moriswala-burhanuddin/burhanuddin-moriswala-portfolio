@@ -1,0 +1,11 @@
+# Netlify Redirects for React SPA (React Router)
+# All routes fall back to index.html so React Router handles them client-side.
+
+# Force HTTPS (handled by Netlify automatically, but explicit here for docs)
+# http://burhanuddinmoriswala.netlify.app/* https://burhanuddinmoriswala.netlify.app/:splat 301!
+
+# Redirect www → non-www (update if your custom domain uses www)
+# http://www.yourdomain.com/* https://yourdomain.com/:splat 301!
+
+# SPA fallback — MUST be last
+/*    /index.html    200

@@ -1,0 +1,115 @@
+:root {
+  --primary-red: #E31B23;
+  --secondary-red: #B2161B;
+  --bg-white: #FFFFFF;
+  --bg-off-white: #F8F9FA;
+  --text-black: #1A1A1A;
+  --text-gray: #666666;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow: 0 10px 30px rgba(227, 27, 35, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(227, 27, 35, 0.1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-white);
+  color: var(--text-black);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ── CUSTOM SCROLLBAR ── */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-red);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-red);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-red) #f1f1f1;
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.serif {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  text-transform: none;
+  font-style: italic;
+  /* No color here - set per component */
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+.btn-primary {
+  background-color: var(--primary-red);
+  color: white;
+  padding: 1.2rem 2.5rem;
+  border-radius: 50px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: var(--shadow);
+}
+
+.btn-primary:hover {
+  background-color: var(--secondary-red);
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(227, 27, 35, 0.2);
+}
+
+.capsule {
+  position: absolute;
+  padding: 15px 40px;
+  background: white;
+  color: var(--text-black);
+  border-radius: 100px;
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  cursor: grab;
+  user-select: none;
+  white-space: nowrap;
+  z-index: 5;
+}
+
+@media (max-width: 768px) {
+  .capsule {
+    font-size: 1rem;
+    padding: 10px 25px;
+  }
+}
