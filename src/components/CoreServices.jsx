@@ -184,7 +184,7 @@ const CoreServices = () => {
                             transition={{ delay: 0.3 }}
                         >
                             <div className="sc-grid">
-                                {[['4+', 'Yrs Exp'], ['50+', 'Projects'], ['30+', 'Clients'], ['100%', 'Satisfaction']].map(([n, l], i) => (
+                                {[['50+', 'Projects'], ['30+', 'Clients'], ['100%', 'Satisfaction']].map(([n, l], i) => (
                                     <div className="sc-item" key={i}>
                                         <span className="sc-num">{n}</span>
                                         <span className="sc-lbl">{l}</span>
@@ -192,7 +192,7 @@ const CoreServices = () => {
                                 ))}
                             </div>
                             <motion.a
-                                href="mailto:hello@burhanuddin.dev"
+                                href="mailto:burhanuddinmoris52@gmail.com"
                                 className="sc-btn"
                                 whileHover={{ scale: 1.04, letterSpacing: '4px' }}
                             >

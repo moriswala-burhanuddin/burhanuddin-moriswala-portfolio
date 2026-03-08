@@ -1,7 +1,7 @@
 export const projectsData = [
     {
         id: 1, num: '01', title: 'Al Naseem Al Zahara', subtitle: 'Product Showcase - UAE', category: 'Web',
-        year: '2024',
+        year: '2026',
         desc: 'Developed for an industrial products company in the UAE, showcasing rubber products, flow controls, and precision valves.',
         image: '/src/assets/projects/real-projects/alnaseem-1.jpeg',
         images: [
@@ -15,7 +15,7 @@ export const projectsData = [
     },
     {
         id: 2, num: '02', title: 'Zohra No.1', subtitle: 'Dubai-based Business', category: 'Web',
-        year: '2024',
+        year: '2026',
         desc: 'A professional company website designed for a Dubai-based business, highlighting products and brand identity with a clean layout.',
         image: '/src/assets/projects/real-projects/zohra-no-1-1.jpeg',
         images: [
@@ -28,7 +28,7 @@ export const projectsData = [
     },
     {
         id: 3, num: '03', title: 'TMR International', subtitle: 'Industrial Tools - Uganda', category: 'Industrial',
-        year: '2023',
+        year: '2026',
         desc: 'Created for an industrial tools company in Uganda, displaying their product range and service overview.',
         image: '/src/assets/projects/real-projects/tmr-tools-1.jpeg',
         images: [
@@ -41,7 +41,7 @@ export const projectsData = [
     },
     {
         id: 4, num: '04', title: 'Invenza ERP', subtitle: 'Business Assistant', category: 'SaaS',
-        year: '2024',
+        year: '2026',
         desc: 'An all-in-one ERP software featuring POS, inventory tracking, HR payroll, and a smart AI business assistant.',
         image: '/src/assets/projects/real-projects/invenza-erp-1.jpeg',
         images: [
@@ -54,7 +54,7 @@ export const projectsData = [
     },
     {
         id: 5, num: '05', title: 'Elegance E-commerce', subtitle: 'Fashion Platform', category: 'E-Commerce',
-        year: '2023',
+        year: '2026',
         desc: 'An online shopping platform featuring product listings, high-end design, and a seamless shopping experience.',
         image: '/src/assets/projects/real-projects/elegance-1.jpeg',
         images: [
@@ -68,7 +68,7 @@ export const projectsData = [
     },
     {
         id: 6, num: '06', title: 'Showtime Photo Booth', subtitle: 'Event Tech - NYC', category: 'Web',
-        year: '2024',
+        year: '2026',
         desc: 'Premium photo booth rental service in NYC, offering high-quality prints and digital experiences for events.',
         image: '/src/assets/projects/real-projects/showtime-1.jpeg',
         images: [
@@ -81,7 +81,7 @@ export const projectsData = [
     },
     {
         id: 7, num: '07', title: 'Bharat Motors', subtitle: 'Automotive Showcase', category: 'Web',
-        year: '2024',
+        year: '2026',
         desc: 'Premium automotive website featuring interactive bookings and a scalable architecture for car models.',
         image: '/src/assets/projects/real-projects/bharat-motors-1.jpeg',
         images: [
@@ -95,7 +95,7 @@ export const projectsData = [
     },
     {
         id: 8, num: '08', title: 'Dental Care Platform', subtitle: 'Health Tech', category: 'Health',
-        year: '2024',
+        year: '2026',
         desc: 'Dental clinic website with an intelligent AI chatbot for 24/7 appointment scheduling and support.',
         image: '/src/assets/projects/real-projects/dental-care-1.jpeg',
         images: [
@@ -108,7 +108,7 @@ export const projectsData = [
     },
     {
         id: 9, num: '09', title: 'Interior Designer Portfolio', subtitle: 'Luxury Design', category: 'Design',
-        year: '2024',
+        year: '2026',
         desc: 'Luxury interior portfolio showcasing high-end residential and commercial projects with ultra-premium visuals.',
         image: '/src/assets/projects/real-projects/interior-designer-1.jpeg',
         images: [
@@ -122,7 +122,7 @@ export const projectsData = [
     },
     {
         id: 10, num: '10', title: 'THE GYM', subtitle: 'Fitness Showcase', category: 'Web',
-        year: '2023',
+        year: '2026',
         desc: 'Scalable and user-centric fitness branding platform with high-performance code architecture.',
         image: '/src/assets/projects/real-projects/the-gym-1.jpeg',
         images: [
@@ -136,7 +136,7 @@ export const projectsData = [
     },
     {
         id: 11, num: '11', title: 'Face Recognition Attendance', subtitle: 'Biometric System', category: 'SaaS',
-        year: '2024',
+        year: '2026',
         desc: 'Advanced face recognition system for gym attendance with real-time logging and secure biometric data.',
         image: '/src/assets/projects/real-projects/face-recog-1.jpeg',
         images: [
@@ -149,7 +149,7 @@ export const projectsData = [
     },
     {
         id: 12, num: '12', title: 'Lumière Restaurant', subtitle: 'Culinary Experience', category: 'Hospitality',
-        year: '2023',
+        year: '2026',
         desc: 'Elegant dark-themed culinary platform with a seamless reservations system and high-end aesthetics.',
         image: '/src/assets/projects/real-projects/lumire-rest-1.jpeg',
         images: [
@@ -162,7 +162,7 @@ export const projectsData = [
     },
     {
         id: 13, num: '13', title: 'Decent Institute', subtitle: 'Education Platform', category: 'Education',
-        year: '2023',
+        year: '2026',
         desc: 'A modern, responsive institute website for showcasing courses and managing student inquiries effectively.',
         image: '/src/assets/projects/real-projects/decent-in-1.jpeg',
         images: [

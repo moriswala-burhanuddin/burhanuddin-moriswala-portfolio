@@ -139,7 +139,7 @@ const Navbar = () => {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7 }}
             >
-              © 2024 Burhanuddin Moriswala
+              © 2026 Burhanuddin Moriswala
             </motion.p>
           </motion.div>
         )}

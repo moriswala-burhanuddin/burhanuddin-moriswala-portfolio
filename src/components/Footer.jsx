@@ -60,11 +60,11 @@ const Footer = () => (
                     </DraggableItem>
                     <DraggableItem>
                         <motion.a
-                            href="mailto:hello@burhanuddin.dev"
+                            href="mailto:burhanuddinmoris52@gmail.com"
                             className="footer-email"
                             whileHover={{ x: 6 }}
                         >
-                            hello@burhanuddin.dev →
+                            burhanuddinmoris52@gmail.com →
                         </motion.a>
                     </DraggableItem>
                 </div>
@@ -126,7 +126,7 @@ const Footer = () => (
             <div className="footer-bottom">
                 <DraggableItem>
                     <span className="footer-copy">
-                        © 2024 <Link to="/" style={{ color: 'inherit', textDecoration: 'none', fontWeight: 900 }}>Burhanuddin Moriswala</Link>. All rights reserved.
+                        © 2026 <Link to="/" style={{ color: 'inherit', textDecoration: 'none', fontWeight: 900 }}>Burhanuddin Moriswala</Link>. All rights reserved.
                     </span>
                 </DraggableItem>
                 <DraggableItem>

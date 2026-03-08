@@ -4,7 +4,6 @@ import { useRef } from 'react';
 import DraggableItem from './DraggableItem';
 
 const stats = [
-  { num: '4+', label: 'Years of\nExperience' },
   { num: '50+', label: 'Projects\nDelivered' },
   { num: '30+', label: 'Happy\nClients' },
   { num: '100%', label: 'Client\nSatisfaction' },
@@ -104,8 +103,7 @@ const About = () => {
               transition={{ delay: 0.2, duration: 0.8 }}
             >
               Passionate about turning complex problems into elegant, scalable digital products.
-              With 4+ years of hands-on experience in full stack development, I blend technical
-              precision with design intuition to deliver work that performs as beautifully as it looks.
+              I blend technical precision with design intuition to deliver work that performs as beautifully as it looks.
             </motion.p>
           </DraggableItem>
         </div>

@@ -123,8 +123,8 @@ const Contact = () => {
           <DraggableItem>
             <div className="contact-email-big">
               <span className="email-label">EMAIL</span>
-              <a href="mailto:hello@burhanuddin.dev" className="email-link">
-                hello@burhanuddin.dev
+              <a href="mailto:burhanuddinmoris52@gmail.com" className="email-link">
+                burhanuddinmoris52@gmail.com
               </a>
             </div>
           </DraggableItem>
@@ -148,7 +148,7 @@ const Contact = () => {
       {/* Bottom bar */}
       <div className="contact-footer-bar">
         <DraggableItem>
-          <span className="footer-copy">© 2024 Burhanuddin Moriswala. All rights reserved.</span>
+          <span className="footer-copy">© 2026 Burhanuddin Moriswala. All rights reserved.</span>
         </DraggableItem>
         <DraggableItem>
           <span className="footer-built">Built with React + Framer Motion</span>
