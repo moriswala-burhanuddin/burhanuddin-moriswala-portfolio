@@ -161,7 +161,7 @@ const About = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
             >
-              <img src="/src/assets/hero-image.png" alt="Burhanuddin" className="about-photo" />
+              <img src="/hero-image.png" alt="Burhanuddin" className="about-photo" />
               <div className="photo-tag">
                 <span className="photo-tag-dot" />
                 <span>Open to opportunities</span>

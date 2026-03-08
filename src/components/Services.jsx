@@ -64,6 +64,7 @@ const SkillCapsule = ({ text, constraintsRef, initialPos, scrollYProgress, shake
 
   return (
     <DraggableItem
+      alwaysDraggable={true}
       style={{
         position: 'absolute',
         left: initialPos.x,

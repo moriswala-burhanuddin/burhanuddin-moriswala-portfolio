@@ -8,13 +8,16 @@ import { useDragMode } from '../context/DragContext';
  * can animate the position back to x:0, y:0 when dragMode exits.
  * This fixes the "elements stuck after chaos mode" bug.
  */
-const DraggableItem = ({ children, className = '', style = {} }) => {
+const DraggableItem = ({ children, className = '', style = {}, alwaysDraggable = false }) => {
     const { dragMode } = useDragMode();
     const [dragging, setDragging] = useState(false);
 
+    // Only draggable if in chaos mode OR if explicitly marked as always draggable
+    const canDrag = dragMode || alwaysDraggable;
+
     return (
         <motion.div
-            drag={true}
+            drag={canDrag}
             dragMomentum={true}
             dragElastic={0.1}
             dragTransition={{ power: 0.25, timeConstant: 280, bounceStiffness: 200, bounceDamping: 20 }}
@@ -27,7 +30,7 @@ const DraggableItem = ({ children, className = '', style = {} }) => {
             style={{
                 position: 'relative',
                 display: 'inline-block',
-                cursor: dragging ? 'grabbing' : 'grab',
+                cursor: canDrag ? (dragging ? 'grabbing' : 'grab') : 'default',
                 userSelect: 'none',
                 zIndex: dragging ? 99999 : 'auto',
                 willChange: 'transform',
