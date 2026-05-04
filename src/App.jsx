@@ -27,7 +27,7 @@ const Home = () => (
             <CoreServices />
 
             {/* ── ACT 3: WORK ── */}
-            <Projects />
+            {/* <Projects /> */}
 
             {/* ── ACT 4: WHO AM I ── */}
             <About />
