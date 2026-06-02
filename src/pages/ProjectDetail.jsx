@@ -179,44 +179,13 @@ const ProjectDetail = () => {
                 <span className="pd-meta-value">Web Application</span>
               </div>
 
-              <div className="pd-links">
-                <a href={project.live} target="_blank" rel="noreferrer" className="pd-btn-primary">
-                  <span className="pd-btn-text">LAUNCH PROJECT</span>
-                  <span className="pd-btn-icon">↗</span>
-                </a>
 
-                <a href={project.github} target="_blank" rel="noreferrer" className="pd-btn-secondary">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-                  <span>SOURCE CODE</span>
-                </a>
-              </div>
             </div>
           </DraggableItem>
         </div>
       </div>
 
-      {/* ── LIVE PREVIEW IFRAME ── */}
-      {project.live && project.live !== '#' && (
-        <div className="pd-preview-section">
-          <DraggableItem style={{ display: 'block', width: '100%' }}>
-            <h3 className="pd-section-title">LIVE PREVIEW</h3>
-          </DraggableItem>
-          <DraggableItem style={{ display: 'block', width: '100%' }}>
-            <div className="pd-iframe-container">
-              <img
-                src={project.image}
-                alt={`${project.title} Preview`}
-                className="pd-preview-img"
-              />
-              <div className="pd-iframe-overlay">
-                <a href={project.live} target="_blank" rel="noreferrer" className="pd-iframe-btn">
-                  VISIT LIVE WEBSITE ↗
-                </a>
-              </div>
-            </div>
-          </DraggableItem>
-        </div>
-      )}
+
 
       {/* ── PROJECT GALLERY ── */}
       {project.images && project.images.length > 0 && (

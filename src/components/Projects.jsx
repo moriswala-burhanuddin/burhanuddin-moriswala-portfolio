@@ -192,9 +192,7 @@ const Projects = () => {
                     <div className="pj-feat-tags">
                       {featured.tags.map((t, i) => <span key={i} className="pj-feat-tag">{t}</span>)}
                     </div>
-                    <div className="pj-feat-links">
-                      <span className="pj-btn-live">View Case Study ↗</span>
-                    </div>
+
                   </div>
                 </div>
               </Link>
