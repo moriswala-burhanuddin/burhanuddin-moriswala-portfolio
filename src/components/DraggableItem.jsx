@@ -31,10 +31,10 @@ const DraggableItem = ({ children, className = '', style = {}, alwaysDraggable =
                 position: 'relative',
                 display: 'inline-block',
                 cursor: canDrag ? (dragging ? 'grabbing' : 'grab') : 'default',
-                userSelect: 'none',
+                userSelect: canDrag ? 'none' : 'auto',
                 zIndex: dragging ? 99999 : 'auto',
                 willChange: 'transform',
-                touchAction: 'none',
+                touchAction: canDrag ? 'none' : 'auto',
                 pointerEvents: 'all',
                 ...style,
             }}
