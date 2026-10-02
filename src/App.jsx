@@ -1,20 +1,22 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import Services from './components/Services';
-import Projects from './components/Projects';
-import CoreServices from './components/CoreServices';
-import About from './components/About';
-import Testimonials from './components/Testimonials';
-import Certificates from './components/Certificates';
-import SocialMedia from './components/SocialMedia';
-import Contact from './components/Contact';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import { DragProvider } from './context/DragContext';
 import WhatsAppCTA from './components/WhatsAppCTA';
-import ProjectDetail from './pages/ProjectDetail';
+import SmoothScroll from './components/SmoothScroll';
+import CookieConsent from './components/CookieConsent';
+
+const Hero = lazy(() => import('./components/Hero'));
+const Services = lazy(() => import('./components/Services'));
+const Projects = lazy(() => import('./components/Projects'));
+const CoreServices = lazy(() => import('./components/CoreServices'));
+const About = lazy(() => import('./components/About'));
+const Testimonials = lazy(() => import('./components/Testimonials'));
+const SocialMedia = lazy(() => import('./components/SocialMedia'));
+const Contact = lazy(() => import('./components/Contact'));
+const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
 
 const Home = () => (
     <>
@@ -34,7 +36,6 @@ const Home = () => (
 
             {/* ── ACT 5: SOCIAL PROOF ── */}
             <Testimonials />
-            {/* Certificates removed as requested */}
 
             {/* ── ACT 6: CONNECT ── */}
             <SocialMedia />
@@ -54,16 +55,28 @@ function App() {
         window.scrollTo(0, 0);
     }, [location.pathname]);
 
+    // Simple loading component for Suspense fallback
+    const PageLoader = () => (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0a0a0a', color: '#fff' }}>
+            <h2>Loading...</h2>
+        </div>
+    );
+
     return (
-        <DragProvider>
-            <div className="portfolio">
-                <Navbar />
-                <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/project/:id" element={<ProjectDetail />} />
-                </Routes>
-            </div>
-        </DragProvider>
+        <SmoothScroll>
+            <DragProvider>
+                <div className="portfolio">
+                    <Navbar />
+                    <Suspense fallback={<PageLoader />}>
+                        <Routes>
+                            <Route path="/" element={<Home />} />
+                            <Route path="/project/:id" element={<ProjectDetail />} />
+                        </Routes>
+                    </Suspense>
+                    <CookieConsent />
+                </div>
+            </DragProvider>
+        </SmoothScroll>
     );
 }
 

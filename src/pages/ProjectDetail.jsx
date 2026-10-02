@@ -57,7 +57,7 @@ const ProjectDetail = () => {
           className="pd-hero-bg"
           style={{ y: dragMode ? 0 : heroY, opacity: dragMode ? 1 : heroOpacity }}
         >
-          <img src={project.image} alt={project.title} draggable={false} />
+          <img src={project.image} alt={project.title} draggable={false} loading="lazy" />
           <div className="pd-hero-overlay"></div>
         </motion.div>
 
@@ -203,7 +203,7 @@ const ProjectDetail = () => {
                   viewport={{ once: true, margin: '-100px' }}
                   transition={{ duration: 0.8, delay: idx * 0.1 }}
                 >
-                  <img src={img} alt={`${project.title} view ${idx + 1}`} draggable={false} />
+                  <img src={img} alt={`${project.title} view ${idx + 1}`} draggable={false} loading="lazy" />
                 </motion.div>
               </DraggableItem>
             ))}

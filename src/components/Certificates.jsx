@@ -86,7 +86,7 @@ const Certificates = () => {
                   {/* Frame border */}
                   <div className="certx-frame">
                     {cert.src ? (
-                      <img src={cert.src} alt={cert.title} className="certx-img" />
+                      <img src={cert.src} alt={cert.title} className="certx-img" loading="lazy" />
                     ) : (
                       <div className="certx-ph">
                         <div className="certx-ph-inner">
@@ -124,7 +124,7 @@ const Certificates = () => {
                 >
                   <div className="certx-frame">
                     {cert.src ? (
-                      <img src={cert.src} alt={cert.title} className="certx-img" />
+                      <img src={cert.src} alt={cert.title} className="certx-img" loading="lazy" />
                     ) : (
                       <div className="certx-ph">
                         <div className="certx-ph-inner">

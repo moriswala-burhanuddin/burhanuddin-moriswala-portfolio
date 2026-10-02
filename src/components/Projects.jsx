@@ -20,7 +20,7 @@ const TrackCard = ({ p, isActive }) => (
   >
     <Link to={`/project/${p.id}`} className="pj-tc-link">
       <div className="pj-tc-img">
-        <img src={p.image} alt={p.title} draggable={false} />
+        <img src={p.image} alt={p.title} draggable={false} loading="lazy" />
         <div className="pj-tc-overlay">
           <span className="pj-tc-cat">{p.category}</span>
         </div>
@@ -176,7 +176,7 @@ const Projects = () => {
               <Link to={`/project/${featured.id}`} className="pj-feat-link-wrapper">
                 <div className="pj-feat-wrapper">
                   <div className="pj-feat-img">
-                    <img src={featured.image} alt={featured.title} draggable={false} />
+                    <img src={featured.image} alt={featured.title} draggable={false} loading="lazy" />
                     <div className="pj-feat-overlay">
                       <span className="pj-feat-cat">{featured.category}</span>
                       <span className="pj-feat-year">{featured.year}</span>

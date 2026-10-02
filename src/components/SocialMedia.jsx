@@ -225,7 +225,6 @@ const PlatformCard = ({ p, index }) => {
                         >
                             <motion.span
                                 className="sm2-link-bg"
-                                style={{ background: p.gradient || p.color }}
                                 animate={hovered ? { scaleX: 1 } : { scaleX: 0 }}
                                 transition={{ duration: 0.35 }}
                                 style={{ background: p.gradient || p.color, transformOrigin: 'left' }}

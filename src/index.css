@@ -17,12 +17,18 @@
   box-sizing: border-box;
 }
 
+
 body {
   font-family: 'Inter', sans-serif;
   background-color: var(--bg-white);
   color: var(--text-black);
-  overflow-x: hidden;
   line-height: 1.6;
+}
+
+.portfolio {
+  overflow-x: hidden;
+  position: relative;
+  width: 100%;
 }
 
 /* ── CUSTOM SCROLLBAR ── */
