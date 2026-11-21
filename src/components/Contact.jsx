@@ -2,9 +2,18 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import DraggableItem from './DraggableItem';
 
+const SCOPE_TAGS = ['ERP System', 'Custom Web App', 'E-Commerce', 'UI/UX Design', 'API & DevOps', 'Growth Strategy'];
+
 const Contact = () => {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [selectedScopes, setSelectedScopes] = useState(['Custom Web App']);
   const [sent, setSent] = useState(false);
+
+  const toggleScope = (tag) => {
+    setSelectedScopes(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
   const handleSubmit = e => {
@@ -14,14 +23,14 @@ const Contact = () => {
   };
 
   const socials = [
-    { label: 'GitHub', href: '#' },
-    { label: 'LinkedIn', href: '#' },
-    { label: 'Twitter', href: '#' },
-    { label: 'Dribbble', href: '#' },
+    { label: 'GitHub', href: 'https://github.com/moriswala-burhanuddin' },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/burhanuddin-moriswala-0b86022ba/' },
+    { label: 'Instagram', href: 'https://www.instagram.com/code_with52/' },
+    { label: 'Upwork', href: 'https://www.upwork.com/freelancers/~01c5b04e6dda2d085d?viewMode=1' },
   ];
 
   return (
-    <section className="contact-root">
+    <section className="contact-root" id="contact">
 
       {/* Giant background text */}
       <div className="contact-bg-text" aria-hidden="true">
@@ -53,6 +62,25 @@ const Contact = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="cc-form">
+            <div className="cc-scope-wrap">
+              <span className="cc-scope-label">WHAT ARE WE BUILDING?</span>
+              <div className="cc-scope-pills">
+                {SCOPE_TAGS.map(tag => {
+                  const active = selectedScopes.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      className={`cc-scope-pill ${active ? 'cc-scope-active' : ''}`}
+                      onClick={() => toggleScope(tag)}
+                    >
+                      {active ? `✦ ${tag}` : tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="form-row">
               <DraggableItem style={{ flex: 1 }}>
                 <div className="form-group">
@@ -254,6 +282,44 @@ const Contact = () => {
           display: flex;
           flex-direction: column;
           gap: 20px;
+        }
+        .cc-scope-wrap {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          margin-bottom: 4px;
+        }
+        .cc-scope-label {
+          font-size: 0.68rem;
+          font-weight: 900;
+          letter-spacing: 2.5px;
+          color: #999;
+        }
+        .cc-scope-pills {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .cc-scope-pill {
+          padding: 9px 18px;
+          border-radius: 100px;
+          border: 1.5px solid #e4e4e4;
+          background: #f9f9f9;
+          color: #555;
+          font-size: 0.78rem;
+          font-weight: 800;
+          cursor: pointer;
+          transition: all 0.22s ease;
+        }
+        .cc-scope-pill:hover {
+          border-color: #E31B23;
+          color: #E31B23;
+        }
+        .cc-scope-active {
+          background: #E31B23 !important;
+          border-color: #E31B23 !important;
+          color: #fff !important;
+          box-shadow: 0 8px 20px rgba(227, 27, 35, 0.25);
         }
 
         .form-row {

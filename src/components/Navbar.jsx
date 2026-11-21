@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 
 const NAV_LINKS = [
   { label: 'Services', href: '#services' },
+  { label: 'Work', href: '#projects' },
   { label: 'About', href: '#about' },
   { label: 'Contact', href: '#contact' },
 ];
@@ -21,7 +22,6 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close menu when drag mode toggles
   useEffect(() => { setMenuOpen(false); }, [dragMode]);
 
   return (
@@ -365,7 +365,6 @@ const Navbar = () => {
           font-weight: 600;
         }
 
-        /* Desktop: show pill, hide hamburger only on large screens */
         @media (min-width: 769px) {
           .mode-switch { display: flex; }
         }

@@ -1,14 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { projectsData } from '../data/projectsData';
 import DraggableItem from '../components/DraggableItem';
 import { useDragMode } from '../context/DragContext';
+import { ExternalLink, Github, X } from 'lucide-react';
 
 const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { dragMode } = useDragMode();
+  const [lightboxImg, setLightboxImg] = useState(null);
 
   const project = projectsData.find(p => p.id === parseInt(id));
 
@@ -25,12 +27,10 @@ const ProjectDetail = () => {
     );
   }
 
-  // Next / Prev logic
   const currentIndex = projectsData.findIndex(p => p.id === project.id);
   const nextProject = projectsData[(currentIndex + 1) % projectsData.length];
   const prevProject = projectsData[(currentIndex - 1 + projectsData.length) % projectsData.length];
 
-  // Parallax for hero image
   const { scrollYProgress } = useScroll();
   const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '50%']);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
@@ -104,8 +104,6 @@ const ProjectDetail = () => {
 
       {/* ── MAIN CONTENT ── */}
       <div className="pd-container">
-
-        {/* Left Column: Overview */}
         <div className="pd-left">
           <DraggableItem>
             <motion.h3
@@ -179,13 +177,34 @@ const ProjectDetail = () => {
                 <span className="pd-meta-value">Web Application</span>
               </div>
 
-
+              <div className="pd-links">
+                {project.live && project.live !== '#' && (
+                  <a
+                    href={project.live}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pd-btn-primary"
+                  >
+                    <span>LAUNCH LIVE PROJECT</span>
+                    <span className="pd-btn-icon"><ExternalLink size={16} /></span>
+                  </a>
+                )}
+                {project.github && (
+                  <a
+                    href={project.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pd-btn-secondary"
+                  >
+                    <Github size={16} />
+                    <span>VIEW SOURCE / GITHUB</span>
+                  </a>
+                )}
+              </div>
             </div>
           </DraggableItem>
         </div>
       </div>
-
-
 
       {/* ── PROJECT GALLERY ── */}
       {project.images && project.images.length > 0 && (
@@ -202,6 +221,7 @@ const ProjectDetail = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-100px' }}
                   transition={{ duration: 0.8, delay: idx * 0.1 }}
+                  onClick={() => { if (!dragMode) setLightboxImg(img); }}
                 >
                   <img src={img} alt={`${project.title} view ${idx + 1}`} draggable={false} loading="lazy" />
                 </motion.div>
@@ -210,6 +230,31 @@ const ProjectDetail = () => {
           </div>
         </div>
       )}
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {lightboxImg && (
+          <motion.div
+            className="pd-lightbox"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setLightboxImg(null)}
+          >
+            <button className="pd-lb-close" onClick={() => setLightboxImg(null)}>
+              <X size={24} />
+            </button>
+            <motion.img
+              src={lightboxImg}
+              alt="Zoomed preview"
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="pd-lb-img"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── NEXT / PREV NAVIGATION ── */}
       <div className="pd-nav-footer">
@@ -229,7 +274,7 @@ const ProjectDetail = () => {
           background: #030303;
           min-height: 100vh;
           position: relative;
-          z-index: 10; /* Above navbar background normally */
+          z-index: 10;
         }
         
         .pd-not-found {
@@ -237,7 +282,6 @@ const ProjectDetail = () => {
           background: #111; color: white; gap: 20px;
         }
 
-        /* Back Button */
         .pd-back-btn {
           position: fixed;
           top: 40px; left: 6%;
@@ -257,7 +301,6 @@ const ProjectDetail = () => {
         }
         .pd-back-text { font-size: 0.75rem; font-weight: 800; letter-spacing: 2px; }
 
-        /* Hero */
         .pd-hero {
           position: relative;
           height: 90vh;
@@ -269,7 +312,7 @@ const ProjectDetail = () => {
         }
         .pd-hero-bg {
           position: absolute;
-          inset: -10%; /* slightly larger for parallax */
+          inset: -10%;
           z-index: 0;
         }
         .pd-hero-bg img {
@@ -314,7 +357,6 @@ const ProjectDetail = () => {
           max-width: 800px;
         }
 
-        /* Container */
         .pd-container {
           display: grid;
           grid-template-columns: 1.5fr 1fr;
@@ -352,7 +394,6 @@ const ProjectDetail = () => {
           transition: all 0.3s;
         }
 
-        /* Right column card */
         .pd-card {
           background: #0a0a0a;
           border: 1px solid rgba(255,255,255,0.05);
@@ -393,57 +434,6 @@ const ProjectDetail = () => {
         }
         .pd-btn-secondary:hover { background: rgba(255,255,255,0.05); border-color: white; }
 
-        /* Iframe Preview */
-        .pd-preview-section {
-          padding: 0 2% 100px;
-          background: #030303;
-          max-width: 100%;
-          margin: 0 auto;
-        }
-        .pd-iframe-container {
-          position: relative;
-          width: 100%;
-          height: 95vh;
-          border-radius: 48px;
-          overflow: hidden;
-          background: #111;
-          border: 1px solid rgba(255,255,255,0.1);
-          box-shadow: 0 60px 120px rgba(0,0,0,0.95);
-        }
-        .pd-iframe-container img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-        }
-        .pd-iframe-overlay {
-          position: absolute;
-          top: 0; left: 0; width: 100%; height: 100%;
-          display: flex; align-items: center; justify-content: center;
-          background: rgba(0,0,0,0.4);
-          z-index: 5;
-        }
-        .pd-iframe-btn {
-          background: #E31B23;
-          color: white;
-          padding: 20px 40px;
-          border-radius: 100px;
-          text-decoration: none;
-          font-weight: 900;
-          font-size: 1rem;
-          letter-spacing: 2px;
-          box-shadow: 0 20px 40px rgba(227,27,35,0.6);
-          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          display: flex; align-items: center; gap: 10px;
-          border: 2px solid rgba(255,255,255,0.1);
-        }
-        .pd-iframe-btn:hover { 
-          transform: translateY(-8px) scale(1.05);
-          box-shadow: 0 30px 60px rgba(227,27,35,0.8);
-          border-color: white;
-        }
-
-        /* Gallery */
         .pd-gallery {
           padding: 0 6% 120px;
           background: #030303;
@@ -460,12 +450,49 @@ const ProjectDetail = () => {
           background: #111;
           border: 1px solid rgba(255,255,255,0.05);
           box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+          cursor: zoom-in;
+          transition: border-color 0.3s ease;
+        }
+        .pd-gallery-img:hover {
+          border-color: rgba(227,27,35,0.45);
         }
         .pd-gallery-img img {
           width: 100%; height: auto; display: block;
         }
 
-        /* Next/Prev Footer */
+        .pd-lightbox {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.92);
+          backdrop-filter: blur(12px);
+          z-index: 160000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 40px;
+          cursor: zoom-out;
+        }
+        .pd-lb-close {
+          position: absolute;
+          top: 28px;
+          right: 28px;
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: #E31B23;
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .pd-lb-img {
+          max-width: 92vw;
+          max-height: 88vh;
+          border-radius: 20px;
+          box-shadow: 0 30px 90px rgba(0, 0, 0, 0.9);
+          object-fit: contain;
+        }
+
         .pd-nav-footer {
           display: grid; grid-template-columns: 1fr auto 1fr;
           border-top: 1px solid rgba(255,255,255,0.1);

@@ -1,22 +1,93 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef, useState } from 'react';
+import { motion, useScroll, useTransform, useMotionValue, useSpring, useMotionTemplate } from 'framer-motion';
 import DraggableItem from './DraggableItem';
 import DraggableLetters from './DraggableLetters';
 import { useDragMode } from '../context/DragContext';
 
 const Hero = () => {
     const { dragMode } = useDragMode();
+    const heroRef = useRef(null);
+    const [isHoveringHero, setIsHoveringHero] = useState(false);
+
+    // Scroll-driven parallax
+    const { scrollYProgress } = useScroll({
+        target: heroRef,
+        offset: ['start start', 'end start'],
+    });
+
+    const line1Y = useTransform(scrollYProgress, [0, 1], ['0%', '-50%']);
+    const line2Scale = useTransform(scrollYProgress, [0, 1], [1, 1.85]);
+    const line2Y = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
+    const portraitY = useTransform(scrollYProgress, [0, 1], ['0%', '18%']);
+
+    // Cursor position for Dual-Reality Mask Reveal + 3D spatial depth
+    const mouseX = useMotionValue(-500);
+    const mouseY = useMotionValue(-500);
+    const maskRadius = useMotionValue(0);
+
+    const smoothMaskX = useSpring(mouseX, { stiffness: 340, damping: 30, mass: 0.4 });
+    const smoothMaskY = useSpring(mouseY, { stiffness: 340, damping: 30, mass: 0.4 });
+    const smoothRadius = useSpring(maskRadius, { stiffness: 220, damping: 24 });
+
+    // Subtle 3D tilt parallax
+    const normX = useMotionValue(0);
+    const normY = useMotionValue(0);
+    const smoothNX = useSpring(normX, { stiffness: 120, damping: 22 });
+    const smoothNY = useSpring(normY, { stiffness: 120, damping: 22 });
+
+    const textShiftX = useTransform(smoothNX, [-0.5, 0.5], [24, -24]);
+    const textShiftY = useTransform(smoothNY, [-0.5, 0.5], [14, -14]);
+    const imgShiftX = useTransform(smoothNX, [-0.5, 0.5], [-16, 16]);
+
+    // Dynamic CSS clip-path for the hidden dark-luxury layer
+    const clipPathTemplate = useMotionTemplate`circle(${smoothRadius}px at ${smoothMaskX}px ${smoothMaskY}px)`;
+
+    const handleMouseMove = (e) => {
+        if (!heroRef.current || dragMode) return;
+        const rect = heroRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        mouseX.set(x);
+        mouseY.set(y);
+        normX.set(x / rect.width - 0.5);
+        normY.set(y / rect.height - 0.5);
+        if (!isHoveringHero) {
+            setIsHoveringHero(true);
+            maskRadius.set(210);
+        }
+    };
+
+    const handleMouseLeave = () => {
+        setIsHoveringHero(false);
+        maskRadius.set(0);
+        normX.set(0);
+        normY.set(0);
+    };
+
+    const scrollToContact = () => {
+        if (dragMode) return;
+        const el = document.getElementById('contact') || document.querySelector('.contact-root');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+    };
 
     return (
-        <section className="hero-section">
+        <section
+            className="hero-section"
+            ref={heroRef}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+        >
+            {/* ═══════════════════════════════════════════════════════════════
+                LAYER 1: STARK WHITE EDITORIAL SURFACE (DEFAULT)
+            ═══════════════════════════════════════════════════════════════ */}
             <div className="hero-inner">
-
-                {/* Text layer — highest z-index in chaos so letters stay grabbable */}
-                <div
+                <motion.div
                     className="hero-text-bg"
                     style={{
                         zIndex: dragMode ? 300 : 1,
                         pointerEvents: dragMode ? 'all' : 'none',
+                        x: dragMode ? 0 : textShiftX,
+                        y: dragMode ? 0 : textShiftY,
                     }}
                 >
                     <motion.div
@@ -24,23 +95,30 @@ const Hero = () => {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.8 }}
                     >
-                        <div className="hero-line-1">
+                        <motion.div className="hero-line-1" style={{ y: dragMode ? 0 : line1Y }}>
                             <DraggableLetters text="I'm " wrapperClassName="hero-serif" charClassName="hero-serif" />
                             <DraggableLetters text="Full Stack" wrapperClassName="hero-serif hero-red" charClassName="hero-serif hero-red" />
-                        </div>
-                        <div className="hero-line-2">
+                        </motion.div>
+                        <motion.div
+                            className="hero-line-2"
+                            style={{
+                                scale: dragMode ? 1 : line2Scale,
+                                y: dragMode ? 0 : line2Y,
+                            }}
+                        >
                             <DraggableLetters text="DEVELOPER" wrapperClassName="hero-bold" charClassName="hero-bold" />
-                        </div>
+                        </motion.div>
                     </motion.div>
-                </div>
+                </motion.div>
 
-                {/* Hero Image — container is pointer-events:none so transparent
-                    gaps don't block text/btn. DraggableItem inside IS interactive. */}
-                <div
+                {/* Hero Portrait */}
+                <motion.div
                     className="hero-image-center"
                     style={{
                         zIndex: dragMode ? 150 : 5,
-                        pointerEvents: 'none',   /* container never blocks */
+                        pointerEvents: 'none',
+                        x: dragMode ? 0 : imgShiftX,
+                        y: dragMode ? 0 : portraitY,
                     }}
                 >
                     <DraggableItem style={{ display: 'flex', alignItems: 'flex-end', height: '100%', pointerEvents: 'all' }}>
@@ -50,24 +128,31 @@ const Hero = () => {
                             className="hero-img"
                             initial={{ opacity: 0, y: 60 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4, duration: 1 }}
+                            transition={{ delay: 0.35, duration: 1 }}
                             draggable={false}
                             style={{ pointerEvents: 'none' }}
                         />
                     </DraggableItem>
-                </div>
+                </motion.div>
 
                 {/* CTA */}
-                <div className="hero-cta" style={{ zIndex: dragMode ? 280 : 10, pointerEvents: 'all' }}>
+                <div
+                    className="hero-cta"
+                    style={{ zIndex: dragMode ? 280 : 25, pointerEvents: 'all' }}
+                    onMouseEnter={() => !dragMode && maskRadius.set(320)}
+                    onMouseLeave={() => !dragMode && maskRadius.set(210)}
+                >
                     <DraggableItem>
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: 0.5 }}>
-                            <button className="btn-primary">LET'S CHAT</button>
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85, duration: 0.5 }}>
+                            <button className="btn-primary" onClick={scrollToContact}>
+                                LET'S CHAT
+                            </button>
                         </motion.div>
                     </DraggableItem>
                 </div>
 
                 {/* Footer */}
-                <div className="hero-footer" style={{ zIndex: dragMode ? 80 : 10 }}>
+                <div className="hero-footer" style={{ zIndex: dragMode ? 80 : 20 }}>
                     <DraggableItem>
                         <div className="footer-left">
                             <div className="footer-divider"></div>
@@ -76,11 +161,59 @@ const Hero = () => {
                     </DraggableItem>
                     <DraggableItem>
                         <div className="footer-right">
-                            <p>Build a credible, conversion-<br />focused website that shows<br />your ideal client exactly how<br />you can help them.</p>
+
                         </div>
                     </DraggableItem>
                 </div>
             </div>
+
+            {/* ═══════════════════════════════════════════════════════════════
+                LAYER 2: HIDDEN OBSIDIAN + CRIMSON ARCHITECT LAYER
+                (Revealed dynamically inside the cursor's circular portal!)
+            ═══════════════════════════════════════════════════════════════ */}
+            {!dragMode && (
+                <motion.div
+                    className="hero-dark-portal"
+                    style={{ clipPath: clipPathTemplate }}
+                    aria-hidden="true"
+                >
+                    <div className="hdp-grid" />
+                    <div className="hero-inner">
+                        <motion.div
+                            className="hero-text-bg"
+                            style={{ x: textShiftX, y: textShiftY }}
+                        >
+                            <motion.div className="hero-line-1" style={{ y: line1Y }}>
+                                <span className="hero-serif hdp-white">Creative </span>
+                                <span className="hero-serif hero-red">Architect</span>
+                            </motion.div>
+                            <motion.div
+                                className="hero-line-2"
+                                style={{ scale: line2Scale, y: line2Y }}
+                            >
+                                <span className="hero-bold hdp-outline">&amp; ENGINEER</span>
+                            </motion.div>
+                        </motion.div>
+
+                        <motion.div
+                            className="hero-image-center"
+                            style={{ x: imgShiftX, y: portraitY }}
+                        >
+                            <img
+                                src="/hero-image.png"
+                                alt=""
+                                className="hero-img hdp-img"
+                                draggable={false}
+                            />
+                        </motion.div>
+
+                        <div className="hdp-badges">
+                            <span className="hdp-badge">✦ 50+ SYSTEMS DEPLOYED</span>
+                            <span className="hdp-badge">✦ UK · UAE · NYC · INDIA</span>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
 
             <style>{`
                 .hero-section {
@@ -130,58 +263,108 @@ const Hero = () => {
                 }
                 .footer-right { text-align: right; }
                 .footer-divider { width: 40px; height: 2px; background: #E31B23; margin-bottom: 12px; }
-                
+
+                /* ── DUAL-REALITY DARK PORTAL LAYER ── */
+                .hero-dark-portal {
+                    position: absolute;
+                    inset: 0;
+                    background: #08080a;
+                    z-index: 15;
+                    pointer-events: none;
+                    display: flex;
+                    align-items: stretch;
+                    overflow: hidden;
+                }
+                .hdp-grid {
+                    position: absolute;
+                    inset: 0;
+                    background-image:
+                        linear-gradient(rgba(227, 27, 35, 0.14) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(227, 27, 35, 0.14) 1px, transparent 1px);
+                    background-size: 64px 64px;
+                }
+                .hdp-white {
+                    color: #ffffff !important;
+                }
+                .hdp-outline {
+                    color: transparent !important;
+                    -webkit-text-stroke: 2.5px #ffffff;
+                    text-shadow: 0 0 40px rgba(227, 27, 35, 0.45);
+                }
+                .hdp-img {
+                    filter: contrast(1.18) brightness(0.95) drop-shadow(0 0 35px rgba(227, 27, 35, 0.55));
+                }
+                .hdp-badges {
+                    position: absolute;
+                    top: 18%;
+                    width: 88%;
+                    left: 6%;
+                    display: flex;
+                    justify-content: space-between;
+                }
+                .hdp-badge {
+                    background: rgba(227, 27, 35, 0.18);
+                    border: 1px solid #E31B23;
+                    color: #fff;
+                    font-size: 0.72rem;
+                    font-weight: 900;
+                    letter-spacing: 2.5px;
+                    padding: 8px 18px;
+                    border-radius: 100px;
+                }
+
                 @media (max-width: 1024px) {
                     .hero-bold { font-size: 18vw; } .hero-serif { font-size: 14vw; }
                     .hero-img { height: 70%; }
                 }
                 @media (max-width: 768px) {
-          .hero-section { 
-            height: auto; 
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-          }
-          .hero-inner {
-            display: flex;
-            flex-direction: column;
-            padding-top: 0; /* Remove top gap */
-            text-align: center;
-            align-items: center;
-            justify-content: flex-end;
-            height: 100dvh; /* Use dynamic viewport height */
-            width: 100%;
-          }
-          .hero-text-bg {
-            order: 1; margin-top: 80px; width: 100%;
-            padding: 0 5%;
-          }
-          .hero-image-center {
-            order: 3; width: 100%; height: 55vh;
-            display: flex; align-items: flex-end; justify-content: center;
-            margin: 0;
-            overflow: hidden;
-            position: relative;
-          }
-          .hero-img {
-            width: 100%; height: 100%;
-            max-height: none;
-            object-fit: contain;
-            object-position: bottom center;
-          }
-          .hero-line-1 .hero-serif {
-            font-size: clamp(2rem, 10vw, 3.5rem);
-          }
-          .hero-line-2 .hero-bold {
-            font-size: clamp(3rem, 18vw, 5rem);
-            margin-top: -10px;
-          }
-          .hero-cta { 
-            position: relative; bottom: auto; left: auto; transform: none;
-            margin-top: 20px; order: 1.5; 
-          }
-          .hero-footer { display: none; }
-        }
+                    .hero-dark-portal { display: none; }
+                    .hero-section {
+                        height: auto;
+                        min-height: 100vh;
+                        display: flex;
+                        flex-direction: column;
+                    }
+                    .hero-inner {
+                        display: flex;
+                        flex-direction: column;
+                        padding-top: 0;
+                        text-align: center;
+                        align-items: center;
+                        justify-content: flex-end;
+                        height: 100dvh;
+                        width: 100%;
+                    }
+                    .hero-text-bg {
+                        order: 1; margin-top: 80px; width: 100%;
+                        padding: 0 5%;
+                    }
+                    .hero-image-center {
+                        order: 3; width: 100%; height: 55vh;
+                        display: flex; align-items: flex-end; justify-content: center;
+                        margin: 0;
+                        overflow: hidden;
+                        position: relative;
+                    }
+                    .hero-img {
+                        width: 100%; height: 100%;
+                        max-height: none;
+                        object-fit: contain;
+                        object-position: bottom center;
+                    }
+                    .hero-line-1 .hero-serif {
+                        font-size: clamp(2rem, 10vw, 3.5rem);
+                    }
+                    .hero-line-2 .hero-bold {
+                        font-size: clamp(3rem, 18vw, 5rem);
+                        margin-top: -10px;
+                    }
+                    .hero-cta {
+                        position: relative; bottom: auto; left: auto; transform: none;
+                        margin-top: 20px; order: 1.5;
+                    }
+                    .hero-footer { display: none; }
+                }
                 @media (max-width: 480px) {
                     .hero-serif { font-size: 11vw; }
                     .hero-bold { font-size: 18vw; }

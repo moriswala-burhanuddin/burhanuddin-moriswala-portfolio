@@ -1,18 +1,11 @@
 import React, { useState } from 'react';
-import { motion, useAnimation } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useDragMode } from '../context/DragContext';
 
-/**
- * DraggableItem
- * Renders a motion.div always (never swaps element type) so framer-motion
- * can animate the position back to x:0, y:0 when dragMode exits.
- * This fixes the "elements stuck after chaos mode" bug.
- */
 const DraggableItem = ({ children, className = '', style = {}, alwaysDraggable = false }) => {
     const { dragMode } = useDragMode();
     const [dragging, setDragging] = useState(false);
 
-    // Only draggable if in chaos mode OR if explicitly marked as always draggable
     const canDrag = dragMode || alwaysDraggable;
 
     return (
@@ -21,7 +14,7 @@ const DraggableItem = ({ children, className = '', style = {}, alwaysDraggable =
             dragMomentum={true}
             dragElastic={0.1}
             dragTransition={{ power: 0.25, timeConstant: 280, bounceStiffness: 200, bounceDamping: 20 }}
-            animate={dragMode ? {} : { x: 0, y: 0 }}  // Auto-reset on exit OR if dropped in normal mode
+            animate={dragMode ? {} : { x: 0, y: 0 }}
             transition={{ type: 'spring', stiffness: 200, damping: 28 }}
             onDragStart={() => setDragging(true)}
             onDragEnd={() => setDragging(false)}
@@ -39,7 +32,6 @@ const DraggableItem = ({ children, className = '', style = {}, alwaysDraggable =
                 ...style,
             }}
         >
-            {/* DRAG tooltip — only shows in chaos mode on hover */}
             {dragMode && (
                 <motion.span
                     initial={{ opacity: 0 }}

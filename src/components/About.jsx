@@ -1,11 +1,11 @@
-import React from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
+import React, { useRef, useState } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
 import DraggableItem from './DraggableItem';
 
 const stats = [
   { num: '50+', label: 'Projects\nDelivered' },
   { num: '30+', label: 'Happy\nClients' },
+  { num: '04+', label: 'Years of\nExperience' },
   { num: '100%', label: 'Client\nSatisfaction' },
 ];
 
@@ -16,18 +16,24 @@ const timeline = [
     year: '2023 – NOW',
     role: 'Full Stack Developer',
     company: 'Sysfotech UK LTD',
+    preview: '/projects/real-projects/invenza-erp-1.jpeg',
+    tag: 'ERP & Enterprise Architecture',
     desc: 'Led development of high-performance web applications and ERP systems. Specialized in React + Django ecosystems, implementing robust authentication, business logic, and real-time sync systems.'
   },
   {
     year: '2021 – 2023',
     role: 'Software Developer',
     company: 'Sysfotech',
+    preview: '/projects/real-projects/alnaseem-1.jpeg',
+    tag: 'UAE · UK · Uganda Deployments',
     desc: 'Developed and deployed diverse client projects across UAE, Uganda, and UK. Built scalable industrial product showcases and e-commerce platforms with optimized performance.'
   },
   {
     year: '2020 – 2021',
     role: 'Junior Developer',
     company: 'Freelance',
+    preview: '/projects/real-projects/elegance-1.jpeg',
+    tag: 'Custom UI/UX & Web Apps',
     desc: 'Honed skills in frontend architecture and state management. Delivered custom UI/UX solutions and integrated RESTful APIs for various business needs.'
   },
 ];
@@ -36,9 +42,39 @@ const About = () => {
   const sectionRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start end', 'end start'] });
   const badgeRotate = useTransform(scrollYProgress, [0, 1], [0, 360]);
+  const marqueeX = useTransform(scrollYProgress, [0, 1], ['0%', '-32%']);
+
+  // Floating magnetic preview portal on Experience hover
+  const [hoveredExp, setHoveredExp] = useState(null);
+  const portalX = useMotionValue(0);
+  const portalY = useMotionValue(0);
+  const smoothX = useSpring(portalX, { stiffness: 260, damping: 26 });
+  const smoothY = useSpring(portalY, { stiffness: 260, damping: 26 });
+
+  const handleExpMouseMove = (e) => {
+    portalX.set(e.clientX + 24);
+    portalY.set(e.clientY - 90);
+  };
 
   return (
-    <section className="about-root" ref={sectionRef}>
+    <section className="about-root" id="about" ref={sectionRef}>
+
+      {/* ── KINETIC SCROLL MARQUEE RIBBON ── */}
+      <div className="about-marquee-band" aria-hidden="true">
+        <motion.div className="about-marquee-track" style={{ x: marqueeX }}>
+          <span>FULL STACK ARCHITECTURE</span>
+          <span className="am-star">✦</span>
+          <span className="am-serif">editorial design</span>
+          <span className="am-star">✦</span>
+          <span>ENTERPRISE ERP & SAAS</span>
+          <span className="am-star">✦</span>
+          <span className="am-serif">scalable systems</span>
+          <span className="am-star">✦</span>
+          <span>FULL STACK ARCHITECTURE</span>
+          <span className="am-star">✦</span>
+          <span className="am-serif">editorial design</span>
+        </motion.div>
+      </div>
 
       {/* ── TOP STRIP: Full-Width Intro ── */}
       <div className="about-intro">
@@ -129,7 +165,6 @@ const About = () => {
 
       {/* ── BOTTOM: Skills + Experience ── */}
       <div className="about-bottom">
-
         {/* Skills */}
         <div className="skills-col">
           <DraggableItem>
@@ -170,17 +205,19 @@ const About = () => {
           </DraggableItem>
         </div>
 
-        {/* Experience */}
-        <div className="exp-col">
+        {/* Experience with Hover Image Portal */}
+        <div className="exp-col" onMouseMove={handleExpMouseMove}>
           <DraggableItem>
             <h3 className="col-heading">Work <span className="col-italic">Experience.</span></h3>
           </DraggableItem>
 
           <div className="exp-list">
             {timeline.map((e, i) => (
-              <DraggableItem key={i}>
+              <DraggableItem key={i} style={{ width: '100%' }}>
                 <motion.div
-                  className="exp-item"
+                  className={`exp-item ${hoveredExp === i ? 'exp-item-hovered' : ''}`}
+                  onMouseEnter={() => setHoveredExp(i)}
+                  onMouseLeave={() => setHoveredExp(null)}
                   initial={{ opacity: 0, x: 40 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
@@ -190,7 +227,10 @@ const About = () => {
                     <span className="exp-year">{e.year}</span>
                     <span className="exp-company">{e.company}</span>
                   </div>
-                  <h4 className="exp-role">{e.role}</h4>
+                  <div className="exp-role-row">
+                    <h4 className="exp-role">{e.role}</h4>
+                    <span className="exp-arrow">↗</span>
+                  </div>
                   <p className="exp-desc">{e.desc}</p>
                   {i < timeline.length - 1 && <div className="exp-divider" />}
                 </motion.div>
@@ -199,6 +239,25 @@ const About = () => {
           </div>
         </div>
       </div>
+
+      {/* Floating Magnetic Image Portal on Experience Hover */}
+      <AnimatePresence>
+        {hoveredExp !== null && timeline[hoveredExp] && (
+          <motion.div
+            className="exp-hover-portal"
+            style={{ x: smoothX, y: smoothY }}
+            initial={{ opacity: 0, scale: 0.8, rotate: -4 }}
+            animate={{ opacity: 1, scale: 1, rotate: 2 }}
+            exit={{ opacity: 0, scale: 0.8, rotate: 4 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <img src={timeline[hoveredExp].preview} alt={timeline[hoveredExp].company} />
+            <div className="exp-portal-caption">
+              <span>{timeline[hoveredExp].tag}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style>{`
         .about-root {
@@ -210,12 +269,43 @@ const About = () => {
           overflow: hidden;
         }
 
+        /* ── KINETIC MARQUEE BAND ── */
+        .about-marquee-band {
+          background: #111;
+          color: #fff;
+          padding: 20px 0;
+          overflow: hidden;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .about-marquee-track {
+          display: flex;
+          align-items: center;
+          gap: 36px;
+          white-space: nowrap;
+          font-size: clamp(1.1rem, 2.2vw, 1.7rem);
+          font-weight: 950;
+          letter-spacing: 2px;
+          will-change: transform;
+        }
+        .am-star {
+          color: #E31B23;
+          font-size: 1.2em;
+        }
+        .am-serif {
+          font-family: 'Playfair Display', serif;
+          font-style: italic;
+          font-weight: 900;
+          color: #E31B23;
+          text-transform: none;
+          font-size: 1.15em;
+        }
+
         /* ── INTRO ── */
         .about-intro {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 4vw;
-          padding: 100px 6% 60px;
+          padding: 90px 6% 60px;
           border-bottom: 1px solid #eee;
         }
 
@@ -269,7 +359,6 @@ const About = () => {
           gap: 30px;
         }
 
-        /* Rotating badge */
         .rotating-badge-wrap {
           position: relative;
           width: 200px;
@@ -387,7 +476,6 @@ const About = () => {
           font-weight: 900;
         }
 
-        /* Skills tags */
         .skills-wrap {
           display: flex;
           flex-wrap: wrap;
@@ -406,7 +494,6 @@ const About = () => {
           transition: all 0.2s ease;
         }
 
-        /* Photo card */
         .photo-card {
           position: relative;
           border-radius: 24px;
@@ -451,7 +538,6 @@ const About = () => {
           50% { opacity: 0.3; }
         }
 
-        /* Experience */
         .exp-list {
           display: flex;
           flex-direction: column;
@@ -462,7 +548,14 @@ const About = () => {
           display: flex;
           flex-direction: column;
           gap: 8px;
-          padding-bottom: 32px;
+          padding: 20px 18px 28px;
+          border-radius: 20px;
+          transition: background 0.3s, transform 0.3s;
+          cursor: pointer;
+        }
+        .exp-item-hovered {
+          background: #f9f9f9;
+          transform: translateX(8px);
         }
 
         .exp-header {
@@ -487,12 +580,31 @@ const About = () => {
           text-transform: uppercase;
         }
 
+        .exp-role-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
         .exp-role {
-          font-size: 1.25rem;
-          font-weight: 900;
+          font-size: 1.35rem;
+          font-weight: 950;
           color: #111;
           margin: 0;
           line-height: 1.2;
+        }
+
+        .exp-arrow {
+          font-size: 1.2rem;
+          font-weight: 900;
+          color: #E31B23;
+          opacity: 0;
+          transform: translateX(-8px);
+          transition: all 0.25s;
+        }
+        .exp-item-hovered .exp-arrow {
+          opacity: 1;
+          transform: translateX(0);
         }
 
         .exp-desc {
@@ -505,10 +617,46 @@ const About = () => {
         .exp-divider {
           height: 1px;
           background: #eee;
-          margin-top: 24px;
+          margin-top: 20px;
         }
 
-        /* ── RESPONSIVE ── */
+        /* Floating Magnetic Preview Portal */
+        .exp-hover-portal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 260px;
+          height: 175px;
+          border-radius: 20px;
+          overflow: hidden;
+          background: #111;
+          border: 3px solid #E31B23;
+          box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+          pointer-events: none;
+          z-index: 99990;
+        }
+        .exp-hover-portal img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .exp-portal-caption {
+          position: absolute;
+          bottom: 10px;
+          left: 10px;
+          right: 10px;
+          background: rgba(10, 10, 10, 0.88);
+          backdrop-filter: blur(8px);
+          color: #fff;
+          font-size: 0.65rem;
+          font-weight: 900;
+          letter-spacing: 1.5px;
+          padding: 6px 12px;
+          border-radius: 100px;
+          text-transform: uppercase;
+          text-align: center;
+        }
+
         @media (max-width: 1024px) {
           .about-name-heading { font-size: 11vw; }
           .stats-strip { grid-template-columns: repeat(2, 1fr); }
@@ -519,6 +667,7 @@ const About = () => {
         }
 
         @media (max-width: 768px) {
+          .exp-hover-portal { display: none; }
           .about-root { border-radius: 30px 30px 0 0; }
           .about-intro { grid-template-columns: 1fr; padding: 80px 5% 50px; }
           .about-name-heading { font-size: 16vw; }

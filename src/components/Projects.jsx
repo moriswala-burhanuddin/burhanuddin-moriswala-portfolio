@@ -1,21 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import DraggableItem from './DraggableItem';
 import { useDragMode } from '../context/DragContext';
 import { projectsData as projects } from '../data/projectsData';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, ExternalLink, Layers, LayoutGrid } from 'lucide-react';
 
 const CATEGORIES = ['All', ...new Set(projects.map(p => p.category))];
 
-/* ── Track card — NO DraggableItem here (framer drag breaks flex scroll) ── */
+/* ── Filmstrip Card ── */
 const TrackCard = ({ p, isActive }) => (
   <motion.div
     className={`pj-track-card ${isActive ? 'pj-track-active' : ''}`}
     initial={{ opacity: 0, y: 40 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
-    whileHover={{ y: -6 }}
     transition={{ duration: 0.45 }}
   >
     <Link to={`/project/${p.id}`} className="pj-tc-link">
@@ -23,22 +22,24 @@ const TrackCard = ({ p, isActive }) => (
         <img src={p.image} alt={p.title} draggable={false} loading="lazy" />
         <div className="pj-tc-overlay">
           <span className="pj-tc-cat">{p.category}</span>
+          <span className="pj-tc-arrow"><ArrowUpRight size={18} /></span>
         </div>
       </div>
       <div className="pj-tc-body">
-        <span className="pj-tc-num">{p.num}</span>
+        <div className="pj-tc-meta-top">
+          <span className="pj-tc-num">{p.num} // {p.year}</span>
+          <span className="pj-tc-ghost-num" aria-hidden="true">{p.num}</span>
+        </div>
         <h3 className="pj-tc-title">{p.title}</h3>
-        <p className="pj-tc-sub">{p.subtitle} · {p.year}</p>
+        <p className="pj-tc-sub">{p.subtitle}</p>
         <div className="pj-tc-tags">
-          {p.tags.slice(0, 2).map((t, i) => <span key={i} className="pj-tc-tag">{t}</span>)}
-          {p.tags.length > 2 && <span className="pj-tc-tag">+{p.tags.length - 2}</span>}
+          {p.tags.slice(0, 3).map((t, i) => <span key={i} className="pj-tc-tag">{t}</span>)}
         </div>
       </div>
     </Link>
   </motion.div>
 );
 
-/* Draggable version for chaos mode — each card is a DraggableItem */
 const DraggableCard = ({ p, isActive }) => (
   <DraggableItem>
     <TrackCard p={p} isActive={isActive} />
@@ -47,6 +48,11 @@ const DraggableCard = ({ p, isActive }) => (
 
 const Projects = () => {
   const [activeCategory, setActiveCategory] = useState('All');
+  const [viewMode, setViewMode] = useState('stage'); // 'stage' | 'filmstrip'
+  const [activeProjectId, setActiveProjectId] = useState(projects[0].id);
+  const [activeImgIdx, setActiveImgIdx] = useState(0);
+  const [scrollPct, setScrollPct] = useState(0);
+
   const trackRef = useRef(null);
   const sectionRef = useRef(null);
   const { dragMode } = useDragMode();
@@ -54,66 +60,103 @@ const Projects = () => {
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start end', 'end start'] });
   const headingY = useTransform(scrollYProgress, [0, 1], [40, -40]);
 
+  const rawSkew = useMotionValue(0);
+  const smoothSkew = useSpring(rawSkew, { stiffness: 280, damping: 26 });
+  const skewResetTimer = useRef(null);
+
+  const pulseVelocitySkew = (delta) => {
+    const clamped = Math.max(-9, Math.min(9, delta * 0.14));
+    rawSkew.set(clamped);
+    if (skewResetTimer.current) clearTimeout(skewResetTimer.current);
+    skewResetTimer.current = setTimeout(() => rawSkew.set(0), 90);
+  };
+
   const filtered = activeCategory === 'All'
     ? projects
     : projects.filter(p => p.category === activeCategory);
 
-  const featured = projects[0];
+  useEffect(() => {
+    if (!filtered.some(p => p.id === activeProjectId) && filtered[0]) {
+      setActiveProjectId(filtered[0].id);
+      setActiveImgIdx(0);
+    }
+  }, [activeCategory, filtered, activeProjectId]);
 
-  // Mouse drag-to-scroll state
+  const activeProject = filtered.find(p => p.id === activeProjectId) || filtered[0] || projects[0];
+  const stageImages = activeProject.images && activeProject.images.length > 0
+    ? activeProject.images
+    : [activeProject.image];
+
+  // Mouse drag-to-scroll state for filmstrip
   const isDragging = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+  const lastX = useRef(0);
+
+  const updateScrollProgress = () => {
+    if (!trackRef.current) return;
+    const max = trackRef.current.scrollWidth - trackRef.current.clientWidth;
+    setScrollPct(max > 0 ? Math.min(100, Math.max(0, (trackRef.current.scrollLeft / max) * 100)) : 0);
+  };
 
   const onMouseDown = (e) => {
-    if (dragMode) return; // Disable drag-to-scroll in chaos mode
+    if (dragMode) return;
     isDragging.current = true;
     startX.current = e.pageX - trackRef.current.offsetLeft;
+    lastX.current = e.pageX;
     scrollLeft.current = trackRef.current.scrollLeft;
     trackRef.current.style.cursor = 'grabbing';
     trackRef.current.style.userSelect = 'none';
   };
   const onMouseLeave = () => {
     isDragging.current = false;
+    rawSkew.set(0);
     if (trackRef.current) trackRef.current.style.cursor = 'grab';
   };
   const onMouseUp = () => {
     isDragging.current = false;
+    rawSkew.set(0);
     if (trackRef.current) trackRef.current.style.cursor = 'grab';
   };
   const onMouseMove = (e) => {
     if (!isDragging.current) return;
     e.preventDefault();
+    const dx = e.pageX - lastX.current;
+    lastX.current = e.pageX;
+    pulseVelocitySkew(-dx);
     const x = e.pageX - trackRef.current.offsetLeft;
     const walk = (x - startX.current) * 1.5;
     trackRef.current.scrollLeft = scrollLeft.current - walk;
+    updateScrollProgress();
   };
 
-  // Scroll with mouse wheel horizontally
   const onWheel = (e) => {
     if (trackRef.current) {
       if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
         e.preventDefault();
-        trackRef.current.scrollLeft += e.deltaY * 1.2;
+        trackRef.current.scrollLeft += e.deltaY * 1.25;
+        pulseVelocitySkew(e.deltaY * 0.35);
+        updateScrollProgress();
       }
     }
   };
 
   const scrollTrack = (direction) => {
     if (trackRef.current) {
-      const amount = direction === 'left' ? -400 : 400;
+      const amount = direction === 'left' ? -440 : 440;
+      pulseVelocitySkew(direction === 'left' ? -45 : 45);
       trackRef.current.scrollBy({ left: amount, behavior: 'smooth' });
+      setTimeout(updateScrollProgress, 350);
     }
   };
 
   return (
-    <section className="pj-root" ref={sectionRef}>
-
+    <section className="pj-root" id="projects" ref={sectionRef}>
       {/* ── HEADER ── */}
       <div className="pj-header">
         <DraggableItem>
           <motion.p className="pj-eyebrow" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
-            <span className="pj-eline" />SELECTED WORK
+            <span className="pj-eline" />SELECTED WORK ARCHIVE
           </motion.p>
         </DraggableItem>
         <div className="pj-title-row">
@@ -142,119 +185,220 @@ const Projects = () => {
           </DraggableItem>
         </div>
 
-        {/* Filter pills */}
-        <div className="pj-filters">
-          {CATEGORIES.map(cat => (
-            <DraggableItem key={cat}>
-              <motion.button
-                className={`pj-filter ${activeCategory === cat ? 'pj-filter-active' : ''}`}
-                onClick={() => { setActiveCategory(cat); }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {cat}
-                {activeCategory === cat && (
-                  <motion.span className="pj-filter-dot" layoutId="filter-dot" />
-                )}
-              </motion.button>
-            </DraggableItem>
-          ))}
+        {/* Filter pills + View Mode Switcher */}
+        <div className="pj-controls-bar">
+          <div className="pj-filters">
+            {CATEGORIES.map(cat => (
+              <DraggableItem key={cat}>
+                <motion.button
+                  className={`pj-filter ${activeCategory === cat ? 'pj-filter-active' : ''}`}
+                  onClick={() => setActiveCategory(cat)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {cat}
+                  {activeCategory === cat && (
+                    <motion.span className="pj-filter-dot" layoutId="filter-dot" />
+                  )}
+                </motion.button>
+              </DraggableItem>
+            ))}
+          </div>
+
+          <div className="pj-view-toggle">
+            <button
+              className={`pj-vt-btn ${viewMode === 'stage' ? 'pj-vt-active' : ''}`}
+              onClick={() => setViewMode('stage')}
+            >
+              <Layers size={14} />
+              <span>LOOKBOOK STAGE</span>
+            </button>
+            <button
+              className={`pj-vt-btn ${viewMode === 'filmstrip' ? 'pj-vt-active' : ''}`}
+              onClick={() => setViewMode('filmstrip')}
+            >
+              <LayoutGrid size={14} />
+              <span>FILMSTRIP</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ── FEATURED BIG CARD (always shown for project[0]) ── */}
-      {activeCategory === 'All' && (
-        <div className="pj-featured-outer">
-          <DraggableItem style={{ width: '100%' }}>
-            <motion.div
-              className="pj-featured"
-              initial={{ opacity: 0, y: 60 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.9 }}
-            >
-              <Link to={`/project/${featured.id}`} className="pj-feat-link-wrapper">
-                <div className="pj-feat-wrapper">
-                  <div className="pj-feat-img">
-                    <img src={featured.image} alt={featured.title} draggable={false} loading="lazy" />
-                    <div className="pj-feat-overlay">
-                      <span className="pj-feat-cat">{featured.category}</span>
-                      <span className="pj-feat-year">{featured.year}</span>
-                    </div>
-                  </div>
-                  <div className="pj-feat-info">
-                    <span className="pj-feat-num">{featured.num}</span>
-                    <div>
-                      <h3 className="pj-feat-title">{featured.title}</h3>
-                      <p className="pj-feat-sub">{featured.subtitle}</p>
-                    </div>
-                    <p className="pj-feat-desc">{featured.desc}</p>
-                    <div className="pj-feat-tags">
-                      {featured.tags.map((t, i) => <span key={i} className="pj-feat-tag">{t}</span>)}
-                    </div>
-
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
-          </DraggableItem>
-        </div>
-      )}
-
-      {/* ── TRACK / GRID ── */}
+      {/* ── MODE 1: INTERACTIVE SPLIT-STAGE SHOWCASE (DEFAULT) ── */}
       {dragMode ? (
-        /* CHAOS MODE → responsive grid, every card is DraggableItem */
         <div className="pj-chaos-grid">
-          {filtered.map((p, i) => (
+          {filtered.map((p) => (
             <DraggableCard key={p.id} p={p} />
           ))}
         </div>
+      ) : viewMode === 'stage' ? (
+        <div className="pj-stage-layout">
+          {/* Left: Interactive Editorial Index */}
+          <div className="pj-stage-index">
+            {filtered.map((p) => {
+              const isSelected = p.id === activeProject.id;
+              return (
+                <motion.div
+                  key={p.id}
+                  className={`pj-index-row ${isSelected ? 'pj-index-active' : ''}`}
+                  onMouseEnter={() => {
+                    if (activeProjectId !== p.id) {
+                      setActiveProjectId(p.id);
+                      setActiveImgIdx(0);
+                    }
+                  }}
+                  onClick={() => {
+                    setActiveProjectId(p.id);
+                    setActiveImgIdx(0);
+                  }}
+                >
+                  <div className="pj-ir-top">
+                    <span className="pj-ir-num">{p.num}</span>
+                    <div className="pj-ir-main">
+                      <h3 className="pj-ir-title">{p.title}</h3>
+                      <span className="pj-ir-sub">{p.subtitle}</span>
+                    </div>
+                    <span className="pj-ir-cat">{p.category}</span>
+                    <Link to={`/project/${p.id}`} className="pj-ir-go" aria-label={`Open ${p.title}`}>
+                      <ArrowUpRight size={18} />
+                    </Link>
+                  </div>
+
+                  <AnimatePresence>
+                    {isSelected && (
+                      <motion.div
+                        className="pj-ir-expand"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      >
+                        <p className="pj-ir-desc">{p.desc}</p>
+                        <div className="pj-ir-tags">
+                          {p.tags.map((t, idx) => (
+                            <span key={idx} className="pj-ir-tag">{t}</span>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Right: Sticky Cinematic Preview Viewport */}
+          <div className="pj-stage-preview-col">
+            <div className="pj-stage-card">
+              <div className="pj-sc-visual">
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={`${activeProject.id}-${activeImgIdx}`}
+                    src={stageImages[activeImgIdx] || activeProject.image}
+                    alt={activeProject.title}
+                    className="pj-sc-img"
+                    initial={{ opacity: 0, scale: 1.07 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
+                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                    draggable={false}
+                  />
+                </AnimatePresence>
+
+                <div className="pj-sc-top-hud">
+                  <span className="pj-sc-badge">{activeProject.num} // {activeProject.category}</span>
+                  <span className="pj-sc-year">{activeProject.year}</span>
+                </div>
+
+                {/* Multi-Shot Switcher Pills */}
+                {stageImages.length > 1 && (
+                  <div className="pj-sc-shots">
+                    {stageImages.map((_, idx) => (
+                      <button
+                        key={idx}
+                        className={`pj-sc-shot-btn ${activeImgIdx === idx ? 'shot-active' : ''}`}
+                        onClick={() => setActiveImgIdx(idx)}
+                      >
+                        SHOT 0{idx + 1}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="pj-sc-footer">
+                <div className="pj-sc-meta">
+                  <h4 className="pj-sc-title">{activeProject.title}</h4>
+                  <p className="pj-sc-subtitle">{activeProject.subtitle}</p>
+                </div>
+                <div className="pj-sc-actions">
+                  {activeProject.live && activeProject.live !== '#' && (
+                    <a
+                      href={activeProject.live}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="pj-sc-btn-ghost"
+                    >
+                      <span>LIVE SITE</span>
+                      <ExternalLink size={14} />
+                    </a>
+                  )}
+                  <Link to={`/project/${activeProject.id}`} className="pj-sc-btn-primary">
+                    <span>CASE STUDY</span>
+                    <ArrowUpRight size={16} />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       ) : (
-        /* NORMAL MODE → horizontal scroll track */
+        /* ── MODE 2: VELOCITY-SKEWED HORIZONTAL FILMSTRIP ── */
         <div className="pj-track-outer">
           <div className="pj-track-controls">
-            <button className="pj-nav-btn" onClick={() => scrollTrack('left')}><ArrowLeft size={20} /></button>
-            <button className="pj-nav-btn" onClick={() => scrollTrack('right')}><ArrowRight size={20} /></button>
+            <div className="pj-progress-pill">
+              <div className="pj-progress-fill" style={{ width: `${Math.max(12, scrollPct)}%` }} />
+            </div>
+            <button className="pj-nav-btn" onClick={() => scrollTrack('left')} aria-label="Scroll left"><ArrowLeft size={20} /></button>
+            <button className="pj-nav-btn" onClick={() => scrollTrack('right')} aria-label="Scroll right"><ArrowRight size={20} /></button>
           </div>
           <div className="pj-track-wrap">
-            <div
+            <motion.div
               className="pj-track"
               ref={trackRef}
+              style={{ skewX: smoothSkew }}
+              onScroll={updateScrollProgress}
               onWheel={onWheel}
               onMouseDown={onMouseDown}
               onMouseLeave={onMouseLeave}
               onMouseUp={onMouseUp}
               onMouseMove={onMouseMove}
             >
-              {(activeCategory === 'All' ? filtered.slice(1) : filtered).map((p) => (
+              {filtered.map((p) => (
                 <TrackCard key={p.id} p={p} />
               ))}
-              {/* Scroll hint */}
               <div className="pj-track-hint">
-                <span>← DRAG OR SCROLL →</span>
+                <span>← DRAG FILMSTRIP →</span>
               </div>
-            </div>
+            </motion.div>
             <div className="pj-fade-left" />
             <div className="pj-fade-right" />
           </div>
         </div>
       )}
 
-      {/* ── STYLES ── */}
       <style>{`
-        /* ── ROOT ── */
         .pj-root {
           background: #fff;
           position: relative;
           z-index: 7;
-          padding-bottom: 80px;
+          padding-bottom: 100px;
           border-radius: 60px 60px 0 0;
           margin-top: -60px;
         }
 
-        /* ── HEADER ── */
         .pj-header {
-          padding: 100px 6% 50px;
+          padding: 100px 6% 45px;
           display: flex; flex-direction: column; gap: 20px;
         }
 
@@ -278,7 +422,15 @@ const Projects = () => {
           flex-shrink: 0;
         }
 
-        /* ── FILTER PILLS ── */
+        .pj-controls-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 20px;
+          flex-wrap: wrap;
+          margin-top: 8px;
+        }
+
         .pj-filters {
           display: flex; gap: 10px; flex-wrap: wrap;
         }
@@ -296,76 +448,300 @@ const Projects = () => {
           width: 6px; height: 6px; border-radius: 50%; background: #E31B23; flex-shrink: 0;
         }
 
-        /* ── FEATURED ── */
-        .pj-featured-outer {
-          padding: 20px 6% 60px;
-          display: flex; justify-content: center; width: 100%;
+        .pj-view-toggle {
+          display: inline-flex;
+          background: #f2f2f2;
+          padding: 4px;
+          border-radius: 100px;
+          gap: 4px;
         }
-        .pj-featured {
-          width: 100%; max-width: 1300px;
-          background: #0d0d0d; border-radius: 40px; overflow: hidden;
-          cursor: pointer; min-height: 480px;
-          box-shadow: 0 30px 60px rgba(0,0,0,0.12);
+        .pj-vt-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          padding: 8px 16px;
+          border-radius: 100px;
+          font-size: 0.72rem;
+          font-weight: 900;
+          letter-spacing: 1px;
+          color: #666;
+          cursor: pointer;
+          transition: all 0.25s;
+        }
+        .pj-vt-active {
+          background: #111;
+          color: #fff;
+          box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+        }
+
+        /* ── SPLIT-STAGE LOOKBOOK VIEW ── */
+        .pj-stage-layout {
+          display: grid;
+          grid-template-columns: 1fr 1.15fr;
+          gap: 44px;
+          padding: 10px 6% 20px;
+          align-items: start;
+        }
+        .pj-stage-index {
           display: flex;
+          flex-direction: column;
+          border-top: 1.5px solid #111;
         }
-        .pj-feat-link-wrapper { width: 100%; display: flex; text-decoration: none; }
-        .pj-feat-wrapper {
+        .pj-index-row {
+          border-bottom: 1px solid #e6e6e6;
+          padding: 20px 16px;
+          cursor: pointer;
+          transition: background 0.25s, padding-left 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .pj-index-row:hover {
+          background: #fafafa;
+        }
+        .pj-index-active {
+          background: #0d0d0f !important;
+          color: #fff;
+          border-radius: 20px;
+          border-bottom-color: transparent;
+          padding: 24px 24px;
+          margin: 6px 0;
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.14);
+        }
+        .pj-ir-top {
+          display: flex;
+          align-items: center;
+          gap: 18px;
+        }
+        .pj-ir-num {
+          font-size: 0.8rem;
+          font-weight: 950;
+          color: #E31B23;
+          letter-spacing: 1.5px;
+          width: 28px;
+          flex-shrink: 0;
+        }
+        .pj-ir-main {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .pj-ir-title {
+          font-size: clamp(1.15rem, 1.8vw, 1.65rem);
+          font-weight: 950;
+          margin: 0;
+          line-height: 1.05;
+          color: inherit;
+          text-transform: uppercase;
+          letter-spacing: -0.5px;
+        }
+        .pj-ir-sub {
+          font-size: 0.76rem;
+          color: #888;
+          font-weight: 600;
+        }
+        .pj-index-active .pj-ir-sub {
+          color: rgba(255, 255, 255, 0.5);
+        }
+        .pj-ir-cat {
+          font-size: 0.65rem;
+          font-weight: 900;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          padding: 4px 12px;
+          border-radius: 100px;
+          background: rgba(0, 0, 0, 0.05);
+          color: #555;
+        }
+        .pj-index-active .pj-ir-cat {
+          background: rgba(227, 27, 35, 0.2);
+          color: #ff6b70;
+        }
+        .pj-ir-go {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(0, 0, 0, 0.05);
+          color: #111;
+          text-decoration: none;
+          transition: all 0.25s;
+        }
+        .pj-index-active .pj-ir-go {
+          background: #E31B23;
+          color: #fff;
+        }
+        .pj-ir-expand {
+          overflow: hidden;
+          padding-left: 46px;
+        }
+        .pj-ir-desc {
+          font-size: 0.86rem;
+          color: rgba(255, 255, 255, 0.68);
+          line-height: 1.6;
+          margin: 12px 0 12px;
+        }
+        .pj-ir-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+        .pj-ir-tag {
+          font-size: 0.66rem;
+          font-weight: 800;
+          padding: 4px 11px;
+          border-radius: 100px;
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          color: rgba(255, 255, 255, 0.75);
+        }
+
+        /* Sticky Right Stage Card */
+        .pj-stage-preview-col {
+          position: sticky;
+          top: 105px;
+        }
+        .pj-stage-card {
+          background: #0b0b0e;
+          border-radius: 36px;
+          overflow: hidden;
+          box-shadow: 0 35px 80px rgba(0, 0, 0, 0.22);
+          border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        .pj-sc-visual {
+          position: relative;
+          height: 460px;
+          background: #141418;
+          overflow: hidden;
+        }
+        .pj-sc-img {
           width: 100%;
-          display: grid; grid-template-columns: 1.1fr 0.9fr;
+          height: 100%;
+          object-fit: cover;
+          object-position: top center;
+          display: block;
         }
-        .pj-featured-outer :global(.draggable-item) { width: 100% !important; display: flex !important; justify-content: center; }
-
-        .pj-featured:hover .pj-feat-img img { transform: scale(1.03); }
-
-        .pj-feat-img {
-          position: relative; overflow: hidden; background: #1a1a1a;
-          display: flex; align-items: center; justify-content: center;
-        }
-        .pj-feat-img img {
-          width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-          display: block; object-position: center bottom;
-        }
-        .pj-feat-overlay {
-          position: absolute; inset: 0; background: linear-gradient(to right, transparent 50%, rgba(13,13,13,0.8));
-          display: flex; flex-direction: column; justify-content: space-between; padding: 32px;
+        .pj-sc-top-hud {
+          position: absolute;
+          top: 20px;
+          left: 20px;
+          right: 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
           pointer-events: none;
         }
-        .pj-feat-cat {
-          display: inline-block; background: #E31B23; color: white;
-          font-size: 0.7rem; font-weight: 900; letter-spacing: 2px;
-          padding: 5px 14px; border-radius: 100px; align-self: flex-start;
+        .pj-sc-badge {
+          background: rgba(10, 10, 14, 0.82);
+          backdrop-filter: blur(10px);
+          color: #fff;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          font-size: 0.7rem;
+          font-weight: 900;
+          letter-spacing: 2px;
+          padding: 6px 14px;
+          border-radius: 100px;
         }
-        .pj-feat-year { font-size: 0.75rem; color: rgba(255,255,255,0.4); font-weight: 700; align-self: flex-end; }
-
-        .pj-feat-info {
-          padding: 44px 40px; display: flex; flex-direction: column; gap: 16px; justify-content: center;
+        .pj-sc-year {
+          background: #E31B23;
+          color: #fff;
+          font-size: 0.7rem;
+          font-weight: 900;
+          letter-spacing: 1.5px;
+          padding: 6px 14px;
+          border-radius: 100px;
         }
-        .pj-feat-num { font-size: 0.75rem; font-weight: 900; color: #E31B23; letter-spacing: 2px; }
-        .pj-feat-title { font-size: clamp(24px, 2.5vw, 36px); font-weight: 950; color: white; margin: 0; line-height: 1; text-transform: uppercase; }
-        .pj-feat-sub { font-size: 0.85rem; color: rgba(255,255,255,0.4); margin: 0; font-weight: 600; }
-        .pj-feat-desc { font-size: 0.9rem; color: rgba(255,255,255,0.55); line-height: 1.7; margin: 0; }
-        .pj-feat-tags { display: flex; gap: 8px; flex-wrap: wrap; }
-        .pj-feat-tag {
-          font-size: 0.72rem; font-weight: 800; padding: 5px 14px; border-radius: 100px;
-          border: 1.5px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.55);
+        .pj-sc-shots {
+          position: absolute;
+          bottom: 18px;
+          left: 20px;
+          display: flex;
+          gap: 8px;
+          z-index: 5;
         }
-        .pj-feat-links { display: flex; gap: 12px; margin-top: 4px; }
-
-        /* ── BUTTONS ── */
-        .pj-btn-live {
-          display: inline-block; background: #E31B23; color: white;
-          font-size: 0.82rem; font-weight: 900; padding: 12px 26px; border-radius: 100px;
-          text-decoration: none; letter-spacing: 0.5px; transition: all 0.2s;
-        }
-        .pj-btn-live:hover { background: white; color: #E31B23; }
-
-        .pj-btn-gh {
-          display: inline-block; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7);
-          font-size: 0.82rem; font-weight: 900; padding: 12px 26px; border-radius: 100px;
-          text-decoration: none; letter-spacing: 0.5px; border: 1.5px solid rgba(255,255,255,0.15);
+        .pj-sc-shot-btn {
+          background: rgba(10, 10, 14, 0.78);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: rgba(255, 255, 255, 0.75);
+          font-size: 0.65rem;
+          font-weight: 900;
+          letter-spacing: 1.5px;
+          padding: 6px 12px;
+          border-radius: 100px;
+          cursor: pointer;
           transition: all 0.2s;
         }
-        .pj-btn-gh:hover { background: white; color: #111; border-color: white; }
+        .pj-sc-shot-btn.shot-active, .pj-sc-shot-btn:hover {
+          background: #E31B23;
+          border-color: #E31B23;
+          color: #fff;
+        }
+
+        .pj-sc-footer {
+          padding: 28px 32px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 20px;
+          flex-wrap: wrap;
+          background: #0b0b0e;
+        }
+        .pj-sc-title {
+          font-size: 1.5rem;
+          font-weight: 950;
+          color: #fff;
+          margin: 0;
+          line-height: 1.05;
+        }
+        .pj-sc-subtitle {
+          font-size: 0.82rem;
+          color: rgba(255, 255, 255, 0.45);
+          margin: 4px 0 0;
+          font-weight: 600;
+        }
+        .pj-sc-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .pj-sc-btn-primary {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: #E31B23;
+          color: #fff;
+          text-decoration: none;
+          font-size: 0.76rem;
+          font-weight: 900;
+          letter-spacing: 1.5px;
+          padding: 13px 22px;
+          border-radius: 100px;
+          transition: all 0.25s;
+        }
+        .pj-sc-btn-primary:hover {
+          background: #fff;
+          color: #111;
+          transform: translateY(-2px);
+        }
+        .pj-sc-btn-ghost {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          background: rgba(255, 255, 255, 0.08);
+          color: #fff;
+          text-decoration: none;
+          font-size: 0.74rem;
+          font-weight: 800;
+          letter-spacing: 1px;
+          padding: 12px 18px;
+          border-radius: 100px;
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          transition: all 0.25s;
+        }
+        .pj-sc-btn-ghost:hover {
+          border-color: #fff;
+          background: rgba(255, 255, 255, 0.16);
+        }
 
         /* ── CHAOS GRID ── */
         .pj-chaos-grid {
@@ -374,15 +750,26 @@ const Projects = () => {
           gap: 20px;
           padding: 20px 6% 40px;
         }
-        .pj-chaos-grid .pj-track-card {
-          width: auto;
-        }
+        .pj-chaos-grid .pj-track-card { width: auto; }
 
-        /* ── TRACK ── */
-        .pj-track-outer { position: relative; }
+        /* ── FILMSTRIP TRACK ── */
+        .pj-track-outer { position: relative; margin-top: 20px; }
         .pj-track-controls {
-           position: absolute; top: -60px; right: 6%;
-           display: flex; gap: 12px; z-index: 10;
+           position: absolute; top: -54px; right: 6%;
+           display: flex; align-items: center; gap: 12px; z-index: 10;
+        }
+        .pj-progress-pill {
+          width: 110px;
+          height: 4px;
+          background: #eee;
+          border-radius: 10px;
+          overflow: hidden;
+          margin-right: 8px;
+        }
+        .pj-progress-fill {
+          height: 100%;
+          background: #E31B23;
+          transition: width 0.2s ease-out;
         }
         .pj-nav-btn {
            width: 44px; height: 44px; border-radius: 50%;
@@ -397,27 +784,26 @@ const Projects = () => {
           padding: 0 0 20px;
         }
         .pj-track {
-          display: flex; gap: 20px; overflow-x: auto;
-          padding: 20px 6% 30px;
+          display: flex; gap: 28px; overflow-x: auto;
+          padding: 20px 6% 40px;
           scrollbar-width: none; -ms-overflow-style: none;
           scroll-snap-type: x mandatory;
           cursor: grab;
           -webkit-overflow-scrolling: touch;
+          will-change: transform;
         }
         .pj-track::-webkit-scrollbar { display: none; }
-        .pj-track.is-dragging { cursor: grabbing; user-select: none; }
 
         .pj-track-hint {
           display: flex; align-items: center; justify-content: center;
-          min-width: 160px; height: 260px;
-          border: 1.5px dashed #ddd; border-radius: 20px;
+          min-width: 160px; height: 380px;
+          border: 1.5px dashed #ddd; border-radius: 28px;
           flex-shrink: 0;
         }
         .pj-track-hint span {
           font-size: 0.72rem; font-weight: 800; letter-spacing: 2px; color: #ccc; writing-mode: vertical-lr;
         }
 
-        /* Fade edges */
         .pj-fade-left, .pj-fade-right {
           position: absolute; top: 0; width: 80px; height: 100%;
           pointer-events: none; z-index: 2;
@@ -425,74 +811,75 @@ const Projects = () => {
         .pj-fade-left { left: 0; background: linear-gradient(to right, #fff, transparent); }
         .pj-fade-right { right: 0; background: linear-gradient(to left, #fff, transparent); }
 
-        /* ── TRACK CARD ── */
         .pj-track-card {
-          flex-shrink: 0; width: 280px; background: #f8f8f8;
-          border-radius: 24px; overflow: hidden; cursor: pointer;
-          border: 2px solid transparent; transition: border-color 0.25s, background 0.25s;
+          flex-shrink: 0; width: 350px; background: #f8f8f8;
+          border-radius: 28px; overflow: hidden; cursor: pointer;
+          border: 2px solid transparent;
+          transition: border-color 0.3s, background 0.3s, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s;
           scroll-snap-align: start;
+          position: relative;
         }
-        .pj-track-card:hover { border-color: #E31B23; background: #fff; box-shadow: 0 8px 40px rgba(0,0,0,0.08); }
-        .pj-track-active { border-color: #E31B23 !important; background: #fff !important; box-shadow: 0 12px 50px rgba(227,27,35,0.15) !important; }
+        .pj-track-card:hover {
+          border-color: #E31B23;
+          background: #111;
+          color: #fff;
+          transform: translateY(-10px);
+          box-shadow: 0 24px 60px rgba(0,0,0,0.16);
+        }
+        .pj-track-card:hover .pj-tc-title { color: #fff; }
+        .pj-track-card:hover .pj-tc-tag { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.75); }
+        .pj-track-card:hover .pj-tc-ghost-num { color: rgba(227,27,35,0.18); }
+        .pj-track-card:hover .pj-tc-arrow { background: #E31B23; color: #fff; transform: rotate(45deg); }
 
         .pj-tc-link { text-decoration: none; color: inherit; display: block; }
-        .pj-tc-link:hover { text-decoration: none; color: inherit; }
 
-        .pj-tc-img { position: relative; height: 160px; overflow: hidden; }
-        .pj-tc-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; display: block; }
+        .pj-tc-img { position: relative; height: 220px; overflow: hidden; }
+        .pj-tc-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1); display: block; }
         .pj-track-card:hover .pj-tc-img img { transform: scale(1.08); }
-        
+
         .pj-tc-overlay {
-          position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
-          display: flex; align-items: flex-end; padding: 12px;
+          position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.55), transparent);
+          display: flex; align-items: flex-end; justify-content: space-between; padding: 16px;
         }
         .pj-tc-cat {
           font-size: 0.65rem; font-weight: 900; letter-spacing: 2px;
-          color: white; background: rgba(227,27,35,0.9); padding: 3px 10px; border-radius: 100px;
+          color: white; background: rgba(227,27,35,0.92); padding: 4px 12px; border-radius: 100px;
+        }
+        .pj-tc-arrow {
+          width: 34px; height: 34px; border-radius: 50%;
+          background: rgba(255,255,255,0.9); color: #111;
+          display: flex; align-items: center; justify-content: center;
+          transition: all 0.3s ease;
         }
 
-        .pj-tc-body { padding: 18px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
-        .pj-tc-num { font-size: 0.68rem; font-weight: 900; color: #E31B23; letter-spacing: 2px; margin: 0; }
-        .pj-tc-title { font-size: 1.1rem; font-weight: 950; color: #111; margin: 0; line-height: 1; }
-        .pj-tc-sub { font-size: 0.72rem; color: #999; font-weight: 600; margin: 0; }
-        .pj-tc-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+        .pj-tc-body { padding: 22px; display: flex; flex-direction: column; gap: 8px; text-align: left; position: relative; }
+        .pj-tc-meta-top { display: flex; justify-content: space-between; align-items: center; }
+        .pj-tc-num { font-size: 0.7rem; font-weight: 900; color: #E31B23; letter-spacing: 2px; margin: 0; }
+        .pj-tc-ghost-num {
+          font-size: 2.6rem; font-weight: 950; line-height: 0.8;
+          color: rgba(0,0,0,0.05); transition: color 0.3s;
+          pointer-events: none;
+        }
+        .pj-tc-title { font-size: 1.3rem; font-weight: 950; color: #111; margin: 0; line-height: 1.05; transition: color 0.3s; text-transform: uppercase; }
+        .pj-tc-sub { font-size: 0.78rem; color: #888; font-weight: 600; margin: 0; }
+        .pj-tc-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
         .pj-tc-tag {
-          font-size: 0.65rem; font-weight: 800; padding: 3px 10px; border-radius: 100px;
-          border: 1.5px solid #e0e0e0; color: #666; margin: 0;
+          font-size: 0.68rem; font-weight: 800; padding: 4px 12px; border-radius: 100px;
+          border: 1.5px solid #e0e0e0; color: #666; margin: 0; transition: all 0.3s;
         }
 
-        /* ── RESPONSIVE ── */
-        @media (max-width: 1100px) {
-          .pj-modal-body { grid-template-columns: 1fr; }
-          .pj-modal-visuals { display: none; } /* Hide large image on smaller screens */
-          .pj-modal-content { height: 90vh; }
-        }
-        @media (max-width: 900px) {
-          .pj-featured-outer { padding: 0 5% 30px; }
-          .pj-feat-wrapper { grid-template-columns: 1fr; }
-          .pj-feat-img { height: 300px; }
-          .pj-feat-overlay { background: linear-gradient(to top, #0d0d0d 30%, transparent); }
-          .pj-root { border-radius: 30px 30px 0 0; }
-          .pj-count-badge { width: 50px; height: 50px; font-size: 1.2rem; }
-          .pj-track-controls { display: none; }
+        @media (max-width: 1024px) {
+          .pj-stage-layout { grid-template-columns: 1fr; }
+          .pj-stage-preview-col { position: static; order: -1; }
+          .pj-sc-visual { height: 340px; }
         }
         @media (max-width: 600px) {
-          .pj-modal-overlay { padding: 15px; }
-          .pj-modal-content { height: 95vh; border-radius: 24px; }
-          .pj-modal-header { padding: 20px 24px; }
-          .pj-modal-info { padding: 30px 24px; }
-          .pj-modal-actions { flex-direction: column; width: 100%; }
-          .pj-modal-btn { justify-content: center; }
-
           .pj-header { padding: 70px 5% 36px; }
-          .pj-feat-info { padding: 28px 24px; }
-          .pj-detail-info { padding: 28px 24px; }
           .pj-track { padding: 20px 5% 30px; }
-          .pj-track-card { width: 240px; }
-          .pj-chaos-grid { grid-template-columns: 1fr 1fr; }
-        }
-        @media (max-width: 480px) {
+          .pj-track-card { width: 280px; }
           .pj-chaos-grid { grid-template-columns: 1fr; }
+          .pj-sc-visual { height: 260px; }
+          .pj-sc-footer { padding: 20px; }
         }
       `}</style>
     </section>
